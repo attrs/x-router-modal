@@ -1,0 +1,22 @@
+{
+  "name": "x-router-modal",
+  "version": "0.0.5",
+  "description": "x-router modal middleware",
+  "main": "x-router-modal.js",
+  "repository": "attrs/x-router-modal",
+  "author": "joje <joje.attrs@gmail.com>",
+  "homepage": "https://github.com/attrs/x-router-modal",
+  "license": "MIT",
+  "keywords": [
+    "router",
+    "browserify",
+    "x-router",
+    "webmodules",
+    "modal"
+  ],
+  "files": [
+    "*.js",
+    "LICENSE",
+    "README.md"
+  ]
+}
