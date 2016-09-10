@@ -1,5 +1,5 @@
 # x-router-modal
-> modal plugin for x-router
+> modal middleware for x-router
 
 ```sh
 $ npm install x-router x-router-modal --save
@@ -9,8 +9,8 @@ $ npm install x-router x-router-modal --save
 var router = require('x-router');
 var modal = require('x-router-modal');
 
-router
-.use(modal({defaultWidth: 700}))
+router()
+.use(modal({defaults: {width: 700}}))
 .get('/', function(req, res, next) {
     res.modal('modal.html', {
     	width: 800,
@@ -20,5 +20,4 @@ router
         res.end();
     });
 });
-
 ```

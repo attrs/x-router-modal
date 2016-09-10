@@ -1,10 +1,183 @@
 var path = require('path');
+var seq = 100;
+var modals = {};
+var current;
 
+var mask = document.createElement('div');
+mask.setAttribute('class', 'xrouter-modal');
+mask.style.background = 'rgba(0,0,0,.15)';
+mask.style.position = 'fixed';
+mask.style.top = mask.style.bottom = mask.style.left = mask.style.right = 0;
+mask.style.opacity = 0;
+mask.style.zIndex = 10000;
+mask.style.overflow = 'auto';
+mask.style.transition = 'opacity .25s ease-in-out';
+mask.onclick = function(e) {
+  if( (e.target || e.srcElement) !== mask ) return;
+  
+  var id = current.id;
+  current && current.close();
+  current = null;
+  delete modals[id];
+};
 
-module.exports = function(defaults) {
-  return function modal(req, res, next) {
-    res.modal = function(src, options, done) {
+function getBoundary() {
+  var w = window,
+      d = document,
+      e = d.documentElement,
+      g = d.getElementsByTagName('body')[0];
+  
+  return {
+    width: w.innerWidth || e.clientWidth || g.clientWidth,
+    height: w.innerHeight|| e.clientHeight|| g.clientHeight
+  }
+}
+
+function defaultBuild(options, done) {
+  var div = document.createElement('div');
+  div.setAttribute('id', options.id);
+  div.setAttribute('class', 'xrouter-modal');
+  div.style.transition = 'all .15s ease-in-out';
+  div.style.transform = 'scale(.6,.6)';
+  div.style.boxSizing = 'border-box';
+  div.style.position = 'relative';
+  div.style.background = options.background;
+  div.style.width = typeof options.width === 'number' ? (options.width + 'px') : options.width;
+  div.style.height = typeof options.height === 'number' ? (options.height + 'px') : options.height;
+  if( options.shadow !== false ) div.style.boxShadow = '0px 0px 20px 3px rgba(0,0,0,.5)';
+  if( options.height ) div.style.overflowY = 'auto';
+  
+  div.style.display = 'none';
+  document.body.appendChild(div);
+  done(null, div);
+  return div;
+}
+
+function defaultOpen(div, options, done) {
+  div.style.display = '';
+  div.style.margin = (+options.margin || 0) + 'px auto';
+  div.style.marginTop = (+options.marginTop || 0) + 'px';
+  div.style.marginBottom = (+options.marginBottom || 0) + 'px';
+
+  document.body.appendChild(mask);
+  mask.appendChild(div);
+  div.style.transform = '';
+  div.style.opacity = 1;
+  mask.style.opacity = 1;
+  
+  var closeaction = function() {
+    div.style.transform = 'scale(.6,.6)';
+    div.style.opacity = 0;
+    mask.style.opacity = 0;
+    
+    setTimeout(function() {
+      document.body.removeChild(mask);
+      mask.removeChild(div);
+    }, 200);
+  };
+  
+  if( options.closable !== false ) {
+    var closebtns = div.querySelectorAll('[modal-close]');
+    var showclosebtn = closebtns.length ? false : true;
+    if( 'closebtn' in options ) showclosebtn = options.closebtn;
+    
+    if( showclosebtn ) {
+      var closebtn = document.createElement('div');
+      closebtn.style.position = 'absolute';
+      closebtn.style.right = '20px';
+      closebtn.style.top = '20px';
+      closebtn.style.cursor = 'pointer';
+      closebtn.style.zIndex = 10001;
+      closebtn.innerHTML = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAaRJREFUSA3tlltSwzAMRcsbVgBsC9gqfPBqYGNwzySn48kkrfP4a++MYsuSriJbcbvZnHDsO3CZDTifsQnEELsYFxMYpviO0r7E8tBZayrQhxhiJ8Hg50T9RX4irjkOEWpjJIZYOIC2Vht5eqb3sW8jEHxGbiJgiMS129jxJYZYOICcrbbn6Tkxvkcgooqh5GXS386XmJIjaj0kJFkTIflHxHWIJb/KvKx06AXjUg+TQERSt/CuoGDOtmKj0usIMLbVZjwlYPyOkIBtP+vERsJW+kZdDglpniZC8rdOmDcRbEDfVlvh6XlS6WuEhAhzoY/66Fjd5j0Gkgu3XH3V0e2jkTxTKrXyJnMbTt8sLYNEjNsI28sIqLaJuFb6Znk+JCpvpK/Q2UgwM7fb+eRW+4YhLm8kX6a8QFjzO+cofDF9s1QHu5PAQzeS5OUNR4zrch3MbKc/xrOsdN+NZJLyhqNyOICcrTbylMSfRRrJt9Y2FKqNsYnQcJN+FuO/w1Nm/rRJvDMOTPThjwCxi2HFNURTfEf5qKDqfHoMxFh9z3RSj2UH/gFDp0r+/I0dzwAAAABJRU5ErkJggg==" title="close">';
+      div.appendChild(closebtn);
       
+      closebtn.onclick = function() {
+        closeaction();
+      };
+    }
+    
+    [].forEach.call(closebtns, function(el) {
+      el.onclick = function() {
+        closeaction();
+      }
+    });
+  }
+  
+  current = modals[div.id] = {
+    div: div,
+    id: div.id,
+    close: closeaction
+  };
+  
+  done(null, div);
+}
+
+
+module.exports = function(options) {
+  options = options || {};
+  var defaults = options.defaults || {};
+  defaults.background = 'background' in defaults ? defaults.background : '#fff';
+  defaults.width = 'width' in defaults ? defaults.width : 800;
+  defaults.marginTop = 'marginTop' in defaults ? defaults.marginTop : 90;
+  defaults.marginBottom = 'marginBottom' in defaults ? defaults.marginBottom : 60;
+  
+  var builder = defaults.builder || {};
+  builder.build = builder.build || defaultBuild;
+  builder.open = builder.open || defaultOpen;
+  
+  return function modal(req, res, next) {
+    res.modal = function(src, options) {
+      var done = arguments[arguments.length - 1];
+      if( typeof done !== 'function' ) done = function(err) { if( err ) console.error('[x-router-modal]', err); };
+      if( typeof options === 'string' ) option = {width:options};
+      if( typeof options === 'number' ) option = {width:options};
+      if( typeof options === 'boolean' ) option = {closable:options};
+      if( typeof options !== 'object' ) options = {};
+      
+      var o = {};
+      for(var k in defaults) o[k] = defaults[k];
+      for(var k in options) o[k] = options[k];
+      o.id = o.id || 'modal-' + (seq++);
+      
+      builder.build(o, function(err, el) {
+        if( err ) return done(err);
+        
+        options.target = '#' + o.id;
+        res.render(src, options, function(err, target) {
+          if( err ) return done(err);
+          
+          builder.open(el, o, function(err) {
+            if( err ) return done(err);
+            done(null, target);
+          });
+        });
+      });
     };
+    
+    next();
   };
 };
+
+if( 'xrouter' in window ) {
+  var ctx = window.xrouter.modal = {
+    ids: function() {
+      var ids = [];
+      for(var k in modals) ids.push(k);
+      return ids;
+    },
+    get: function(id) {
+      return modals[id];
+    },
+    close: function(id) {
+      if( !arguments.length ) ctx.closeAll();
+      modals[id] && modals[id].close();
+      return this;
+    },
+    closeAll: function() {
+      for(var k in modals) {
+        modals[k].close();
+      }
+      return this;
+    }
+  };
+}
