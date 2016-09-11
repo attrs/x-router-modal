@@ -5,7 +5,7 @@ var current;
 
 var mask = document.createElement('div');
 mask.setAttribute('class', 'xrouter-modal');
-mask.style.background = 'rgba(0,0,0,.15)';
+mask.style.background = 'rgba(0,0,0,.5)';
 mask.style.position = 'fixed';
 mask.style.top = mask.style.bottom = mask.style.left = mask.style.right = 0;
 mask.style.opacity = 0;
@@ -34,20 +34,37 @@ function getBoundary() {
 }
 
 function defaultBuild(options, done) {
+  // normalize style option
+  var css = '';
+  if( typeof options.style === 'object' ) {
+    for(var k in options.style) {
+      css += (k + ': ' + (options.style[k] || '') + ';');
+    }
+  }
+  
+  // normalize class option
+  if( Array.isArray(options.className) ) options.className = options.className.join(' ');
+  
   var div = document.createElement('div');
   div.setAttribute('id', options.id);
-  div.setAttribute('class', 'xrouter-modal');
-  div.style.transition = 'all .15s ease-in-out';
-  div.style.transform = 'scale(.6,.6)';
-  div.style.boxSizing = 'border-box';
+  if( options.style ) div.setAttribute('style', css);
+  if( options.className ) div.setAttribute('class', 'xrouter-modal ' + options.className);
+  else div.setAttribute('class', 'xrouter-modal');
+  
+  div.style.display = 'none';
   div.style.position = 'relative';
+  div.style.boxSizing = 'border-box';
+  div.style.transition = 'all .15s ease-in';
+  div.style.transform = 'scale(.6,.6)';
+  //div.style.borderRadius = '3px';
+  //div.style.overflow = 'hidden';
   div.style.background = options.background;
   div.style.width = typeof options.width === 'number' ? (options.width + 'px') : options.width;
   div.style.height = typeof options.height === 'number' ? (options.height + 'px') : options.height;
-  if( options.shadow !== false ) div.style.boxShadow = '0px 0px 20px 3px rgba(0,0,0,.5)';
+  if( options.shadow !== false ) div.style.boxShadow = '0 5px 15px rgba(0,0,0,.5)';
+  if( options.width ) div.style.overflowX = 'auto';
   if( options.height ) div.style.overflowY = 'auto';
   
-  div.style.display = 'none';
   document.body.appendChild(div);
   done(null, div);
   return div;
@@ -58,23 +75,6 @@ function defaultOpen(div, options, done) {
   div.style.margin = (+options.margin || 0) + 'px auto';
   div.style.marginTop = (+options.marginTop || 0) + 'px';
   div.style.marginBottom = (+options.marginBottom || 0) + 'px';
-
-  document.body.appendChild(mask);
-  mask.appendChild(div);
-  div.style.transform = '';
-  div.style.opacity = 1;
-  mask.style.opacity = 1;
-  
-  var closeaction = function() {
-    div.style.transform = 'scale(.6,.6)';
-    div.style.opacity = 0;
-    mask.style.opacity = 0;
-    
-    setTimeout(function() {
-      document.body.removeChild(mask);
-      mask.removeChild(div);
-    }, 200);
-  };
   
   if( options.closable !== false ) {
     var closebtns = div.querySelectorAll('[modal-close]');
@@ -92,21 +92,39 @@ function defaultOpen(div, options, done) {
       div.appendChild(closebtn);
       
       closebtn.onclick = function() {
-        closeaction();
+        current.close();
       };
     }
     
     [].forEach.call(closebtns, function(el) {
       el.onclick = function() {
-        closeaction();
+        current.close();
       }
     });
   }
   
+  mask.appendChild(div);
+  document.body.appendChild(mask);
+  
+  setTimeout(function() {
+    div.style.transform = 'scale(1,1)';
+    div.style.opacity = 1;
+    mask.style.opacity = 1;
+  }, 1);
+  
   current = modals[div.id] = {
     div: div,
     id: div.id,
-    close: closeaction
+    close: function() {
+      div.style.transform = 'scale(.6,.6)';
+      div.style.opacity = 0;
+      mask.style.opacity = 0;
+      
+      setTimeout(function() {
+        try { document.body.removeChild(mask); } catch(e) {}
+        try { mask.removeChild(div); } catch(e) {}
+      }, 200);
+    }
   };
   
   done(null, div);
@@ -166,6 +184,7 @@ if( 'xrouter' in window ) {
       return ids;
     },
     get: function(id) {
+      if( !arguments.length ) return current;
       return modals[id];
     },
     close: function(id) {
