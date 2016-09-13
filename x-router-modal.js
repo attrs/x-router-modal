@@ -164,9 +164,12 @@ module.exports = function(options) {
         res.render(src, options, function(err, target) {
           if( err ) return done(err);
           
+          var scope = this;
+          var args = arguments;
+          
           builder.open(el, o, function(err) {
             if( err ) return done(err);
-            done(null, target);
+            done.apply(scope, args);
           });
         });
       });
