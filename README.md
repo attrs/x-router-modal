@@ -5,6 +5,9 @@
 $ npm install x-router x-router-modal --save
 ```
 
+## Usage
+> See [`example`](https://github.com/attrs/x-router/tree/master/examples/modal)
+
 ```javascript
 var router = require('x-router');
 var modal = require('x-router-modal');
