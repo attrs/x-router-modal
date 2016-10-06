@@ -2,7 +2,7 @@
   "name": "x-router-modal",
   "version": "0.0.3",
   "description": "x-router modal middleware",
-  "main": "x-router-modal.js",
+  "main": "lib/index.js",
   "repository": "attrs/x-router-modal",
   "author": "joje <joje.attrs@gmail.com>",
   "homepage": "https://github.com/attrs/x-router-modal",
