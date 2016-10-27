@@ -1,6 +1,6 @@
 {
   "name": "x-router-modal",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "x-router modal middleware",
   "main": "lib/index.js",
   "repository": "attrs/x-router-modal",
