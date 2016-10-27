@@ -19,5 +19,8 @@
     "lib",
     "LICENSE",
     "README.md"
-  ]
+  ],
+  "dependencies": {
+    "x-modal": "0.0.2"
+  }
 }
