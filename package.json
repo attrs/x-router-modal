@@ -21,6 +21,6 @@
     "README.md"
   ],
   "dependencies": {
-    "x-modal": "^0.1.5"
+    "x-modal": "^0.1.11"
   }
 }
